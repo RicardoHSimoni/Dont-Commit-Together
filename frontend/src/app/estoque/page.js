@@ -8,6 +8,9 @@ import { useRouter } from 'next/navigation';
 
 export default function EstoquePage() {
   const [mockEstoque, setMockEstoque] = useState(mockEstoqueOrig);
+  const [busca, setBusca] = useState("");
+  const [tamanhoFiltro, setTamanhoFiltro] = useState("");
+  const [categoriaFiltro, setCategoriaFiltro] = useState("");
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
@@ -79,10 +82,66 @@ export default function EstoquePage() {
         <MenuBar hasNotification={hasNotification} />
         <main className={styles.main}>
           <h1 className={styles.titulo}>Controle de Estoque</h1>
-          <div style={{ width: '100%', display: 'flex', justifyContent: 'flex-end', marginBottom: 24 }}>
-            <button className={`${styles.btn} ${styles.btnAdicionar}`} onClick={() => setShowAddModal(true)}>
-              + Adicionar Produto
-            </button>
+          {/* Barra de busca e filtro*/}
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 12, marginBottom: 24 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <input
+                className={styles.formInput}
+                style={{ maxWidth: 300 }}
+                type="text"
+                placeholder="Buscar por nome..."
+                value={busca}
+                onChange={e => setBusca(e.target.value)}
+              />
+              <button className={`${styles.btn} ${styles.btnAdicionar}`} onClick={() => setShowAddModal(true)}>
+                + Adicionar Produto
+              </button>
+            </div>
+            {/* Botões de filtro*/}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontWeight: 500 }}>Filtrar por tamanho:</span>
+              <button
+                className={styles.btn}
+                style={{ background: tamanhoFiltro === '' ? '#d1d5db' : '' }}
+                onClick={() => setTamanhoFiltro("")}
+                type="button"
+              >
+                Todos
+              </button>
+              {[...new Set(mockEstoque.map(item => item.tamanho))].filter(Boolean).map(tam => (
+                <button
+                  key={tam}
+                  className={styles.btn}
+                  style={{ background: tamanhoFiltro === tam ? '#d1d5db' : '' }}
+                  onClick={() => setTamanhoFiltro(tam)}
+                  type="button"
+                >
+                  {tam}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <span style={{ fontWeight: 500 }}>Filtrar por categoria:</span>
+              <button
+                className={styles.btn}
+                style={{ background: categoriaFiltro === '' ? '#d1d5db' : '' }}
+                onClick={() => setCategoriaFiltro("")}
+                type="button"
+              >
+                Todos
+              </button>
+              {[...new Set(mockEstoque.map(item => item.categoria))].filter(Boolean).map(categoria => (
+                <button
+                  key={categoria}
+                  className={styles.btn}
+                  style={{ background: categoriaFiltro === categoria ? '#d1d5db' : '' }}
+                  onClick={() => setCategoriaFiltro(categoria)}
+                  type="button"
+                >
+                  {categoria}
+                </button>
+              ))}
+            </div>
           </div>
           <table className={styles.tabela}>
             <thead>
@@ -96,38 +155,42 @@ export default function EstoquePage() {
               </tr>
             </thead>
             <tbody>
-              {mockEstoque.map(item => (
-                <tr key={item.id}>
-                  <td>{item.id}</td>
-                  {editId === item.id ? (
-                    <>
-                      <td><input className={styles.formInput} name="nome" value={editProduto.nome} onChange={handleEditChange} /></td>
-                      <td><input className={styles.formInput} name="categoria" value={editProduto.categoria} onChange={handleEditChange} /></td>
-                      <td><input className={styles.formInput} name="tamanho" value={editProduto.tamanho} onChange={handleEditChange} /></td>
-                      <td><input className={styles.formInput} name="quantidade" type="number" min={1} value={editProduto.quantidade} onChange={handleEditChange} /></td>
-                      <td>
-                        <button className={`${styles.btn} ${styles.btnAdicionar}`} onClick={() => saveEditProduto(item.id)}>Salvar</button>
-                        <button className={`${styles.btn} ${styles.btnExcluir}`} onClick={cancelEditProduto}>Cancelar</button>
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td>{item.nome}</td>
-                      <td>{item.categoria}</td>
-                      <td>{item.tamanho}</td>
-                      <td>{item.quantidade}</td>
-                      <td>
-                        <button className={`${styles.btn} ${styles.btnEditar}`} onClick={() => startEditProduto(item)}>
-                          Editar
-                        </button>
-                        <button className={`${styles.btn} ${styles.btnExcluir}`} onClick={() => openDeleteModal(item)}>
-                          Excluir
-                        </button>
-                      </td>
-                    </>
-                  )}
-                </tr>
-              ))}
+              {mockEstoque
+                .filter(item => item.nome.toLowerCase().includes(busca.toLowerCase()))
+                .filter(item => !tamanhoFiltro || item.tamanho === tamanhoFiltro)
+                .filter(item => !categoriaFiltro || item.categoria === categoriaFiltro)
+                .map(item => (
+                  <tr key={item.id}>
+                    <td>{item.id}</td>
+                    {editId === item.id ? (
+                      <>
+                        <td><input className={styles.formInput} name="nome" value={editProduto.nome} onChange={handleEditChange} /></td>
+                        <td><input className={styles.formInput} name="categoria" value={editProduto.categoria} onChange={handleEditChange} /></td>
+                        <td><input className={styles.formInput} name="tamanho" value={editProduto.tamanho} onChange={handleEditChange} /></td>
+                        <td><input className={styles.formInput} name="quantidade" type="number" min={1} value={editProduto.quantidade} onChange={handleEditChange} /></td>
+                        <td>
+                          <button className={`${styles.btn} ${styles.btnAdicionar}`} onClick={() => saveEditProduto(item.id)}>Salvar</button>
+                          <button className={`${styles.btn} ${styles.btnExcluir}`} onClick={cancelEditProduto}>Cancelar</button>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td>{item.nome}</td>
+                        <td>{item.categoria}</td>
+                        <td>{item.tamanho}</td>
+                        <td>{item.quantidade}</td>
+                        <td>
+                          <button className={`${styles.btn} ${styles.btnEditar}`} onClick={() => startEditProduto(item)}>
+                            Editar
+                          </button>
+                          <button className={`${styles.btn} ${styles.btnExcluir}`} onClick={() => openDeleteModal(item)}>
+                            Excluir
+                          </button>
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                ))}
             </tbody>
           </table>
           {/* Modal Adicionar */}
@@ -173,4 +236,4 @@ export default function EstoquePage() {
       </div>
     </>
   );
-} 
+}
