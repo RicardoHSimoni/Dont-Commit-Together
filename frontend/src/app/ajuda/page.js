@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Navigation from '../components/navegation/navegation';
 import MenuBar from '../components/menubar/menubar';
 
@@ -16,11 +17,32 @@ const duvidas = [
 
 export default function AjudaPage() {
   const [abertas, setAbertas] = useState(Array(duvidas.length).fill(false));
+  const [novaDuvida, setNovaDuvida] = useState("");
+  const [mensagem, setMensagem] = useState("");
+  const [showMensagem, setShowMensagem] = useState(false);
+  const router = useRouter();
 
   const toggleDuvida = (idx) => {
     setAbertas((prev) =>
       prev.map((open, i) => (i === idx ? !open : open))
     );
+  };
+
+  const handleEnviar = () => {
+    if (novaDuvida.trim() !== "") {
+      setMensagem("duvida registrada, logo responderemos");
+      setNovaDuvida("");
+      setShowMensagem(true);
+      setTimeout(() => setShowMensagem(false), 4000);
+    }
+  };
+
+  const handleCloseMensagem = () => {
+    setShowMensagem(false);
+  };
+
+  const handleAcompanhar = () => {
+    router.push("/acompanheduvidas");
   };
 
   return (
@@ -63,7 +85,104 @@ export default function AjudaPage() {
                 </li>
               ))}
             </ul>
+            {/* Campo para enviar dúvida */}
+            <div style={{ width: '100%', marginTop: 20 }}>
+              <h2 style={{ fontSize: 20, marginBottom: 12 }}>Nos mande a sua dúvida</h2>
+              <textarea
+                placeholder="digite aqui a sua duvida"
+                value={novaDuvida}
+                onChange={e => setNovaDuvida(e.target.value)}
+                style={{
+                  width: '100%',
+                  minHeight: 80,
+                  borderRadius: 8,
+                  border: '1px solid #ccc',
+                  padding: 12,
+                  fontSize: 16,
+                  resize: 'vertical',
+                  background: '#fafafa',
+                  color: '#222',
+                  opacity: 0.9
+                }}
+              />
+              <button
+                onClick={handleEnviar}
+                style={{
+                  marginTop: 12,
+                  padding: '10px 24px',
+                  borderRadius: 6,
+                  border: 'none',
+                  background: '#0070f3',
+                  color: '#fff',
+                  fontSize: 16,
+                  cursor: 'pointer',
+                  fontWeight: 500
+                }}
+              >
+                Enviar
+              </button>
+            </div>
+            {/* Botão para acompanhar dúvidas - AGORA APÓS O CAMPO DE DIGITAR */}
+            <div style={{ width: '100%', margin: '32px 0 0 0' }}>
+              <button
+                onClick={handleAcompanhar}
+                style={{
+                  width: '100%',
+                  padding: '12px 0',
+                  borderRadius: 6,
+                  border: '1px solid #0070f3',
+                  background: '#f5faff',
+                  color: '#0070f3',
+                  fontSize: 16,
+                  cursor: 'pointer',
+                  fontWeight: 500,
+                  marginBottom: 12
+                }}
+              >
+                Acompanhe suas dúvidas
+              </button>
+            </div>
           </div>
+          {/* Caixa flutuante de mensagem */}
+          {showMensagem && (
+            <div style={{
+              position: 'fixed',
+              top: 40,
+              left: 0,
+              right: 0,
+              margin: '0 auto',
+              width: 320,
+              background: '#fff',
+              border: '1px solid #0070f3',
+              borderRadius: 8,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.12)',
+              padding: '20px 32px 20px 20px',
+              zIndex: 1000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <span style={{ color: '#0070f3', fontSize: 16 }}>
+                {mensagem}
+              </span>
+              <button
+                onClick={handleCloseMensagem}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 18,
+                  color: '#0070f3',
+                  cursor: 'pointer',
+                  marginLeft: 16,
+                  fontWeight: 'bold',
+                  lineHeight: 1
+                }}
+                aria-label="Fechar"
+              >
+                ×
+              </button>
+            </div>
+          )}
         </main>
       </div>
     </>
