@@ -60,8 +60,7 @@ public class Receiver {
         if (this.receiverLimits == null || this.receiverLimits.isEmpty()) {
             return null;
         }
-        return this.receiverLimits.getLast();
-    }
+        return this.receiverLimits.get(receiverLimits.size() - 1); } // Mudado para retornar o último elemento da lista 06/10    }
 
     public void setNif(String nif) {
         //TODO: IMPLEMENT NIF VALIDATION HERE

@@ -5,6 +5,7 @@ import { FaHome, FaUserPlus, FaBoxes, FaHandHoldingHeart, FaUsers, FaUserFriends
 
 const menuIcons = {
     Home: <FaHome />,
+    Dashboard: <FaChartBar />,
     Cadastro: <FaUserPlus />,
     Estoque: <FaBoxes />,
     Doadores: <FaHandHoldingHeart />,
@@ -26,6 +27,7 @@ export default function Navigation() {
             <div className={styles.sectionTitle}>MENU</div>
             <nav className={styles.menuSection}>
                 <Link href="/home" className={styles.menuItem}>{menuIcons.Home} Home</Link>
+                <Link href="/dashboard" className={styles.menuItem}>{menuIcons.Dashboard} Dashboard</Link>
                 <Link href="/cadastrooption" className={styles.menuItem}>{menuIcons.Cadastro} Cadastro</Link>
                 <Link href="/estoque" className={styles.menuItem}>{menuIcons.Estoque} Estoque</Link>
                 <Link href="/cadastrodoador/lista" className={styles.menuItem}>{menuIcons.Doadores} Doadores</Link>
