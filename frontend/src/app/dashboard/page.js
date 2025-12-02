@@ -22,72 +22,86 @@ export default function DashboardPage() {
   });
 
   const [recentActions, setRecentActions] = useState([]);
+  const [chartData, setChartData] = useState([]);
+
+  function getItemQuantity(item) {
+    return (
+      Number(
+        item?.quantity ??
+          item?.quantidade ??
+          item?.qtd ??
+          item?.qtde ??
+          item?.unidades ??
+          0
+      ) || 0
+    );
+  }
 
   useEffect(() => {
-    const fetchData = async () => {
+    if (typeof window === "undefined") return;
+
+    try {
+      const voluntarios = JSON.parse(
+        localStorage.getItem("mockVoluntarios") || "[]"
+      );
+      const beneficiarios = JSON.parse(
+        localStorage.getItem("mockBeneficiarios") || "[]"
+      );
+      const doadores = JSON.parse(
+        localStorage.getItem("mockDoadores") || "[]"
+      );
+      const estoque = JSON.parse(
+        localStorage.getItem("mockEstoque") || "[]"
+      );
+
+      let doacoesRaw = [];
       try {
-        const base = "http://localhost:8080";
+        doacoesRaw = JSON.parse(
+          localStorage.getItem("mockDoacoes") || "[]"
+        );
+      } catch {
+        doacoesRaw = [];
+      }
 
-        const [
-          peopleRes,
-          giversRes,
-          donationsRes,
-          receiversRes,
-          volunteersRes,
-          itemsRes,
-        ] = await Promise.all([
-          fetch(`${base}/api/people`),
-          fetch(`${base}/api/givers`),
-          fetch(`${base}/api/donations`),
-          fetch(`${base}/api/receivers`),
-          fetch(`${base}/api/voluntaries`),
-          fetch(`${base}/api/items`),
-        ]);
+      const peopleCount =
+        voluntarios.length + beneficiarios.length + doadores.length;
 
-        const [
-          people,
-          givers,
-          donations,
-          receivers,
-          volunteers,
-          items,
-        ] = await Promise.all([
-          peopleRes.json(),
-          giversRes.json(),
-          donationsRes.json(),
-          receiversRes.json(),
-          volunteersRes.json(),
-          itemsRes.json(),
-        ]);
+      const itemsUnits = (estoque || []).reduce(
+        (acc, item) => acc + getItemQuantity(item),
+        0
+      );
 
-        setStats({
-          people: people.length,
-          donations: donations.length,
-          receivers: receivers.length,
-          items: items.length,
-          volunteers: volunteers.length,
-          givers: givers.length,
+      setStats({
+        people: peopleCount,
+        donations: doacoesRaw.length,
+        receivers: beneficiarios.length,
+        volunteers: voluntarios.length,
+        givers: doadores.length,
+        items: itemsUnits,
+      });
+
+      const doacoesNormalizadas = (doacoesRaw || [])
+        .map((d) => ({
+          user: d.user ?? d.nomeDoador ?? "Doador",
+          action: d.action ?? "Doação registrada",
+          date: normalizeDate(d),
+        }))
+        .sort((a, b) => {
+          const da = a.date ? new Date(a.date).getTime() : 0;
+          const db = b.date ? new Date(b.date).getTime() : 0;
+          return db - da;
         });
 
-        setRecentActions([
-          { user: givers[0]?.name || "Doador", action: "Nova doação registrada", date: "21/10/2025" },
-          { user: receivers[0]?.name || "Receptor", action: "Recebeu um item", date: "20/10/2025" },
-          { user: volunteers[0]?.name || "Voluntário", action: "Cadastrado no sistema", date: "19/10/2025" },
-        ]);
-      } catch (error) {
-        console.error("Erro ao buscar dados:", error);
-      }
-    };
+      setRecentActions(doacoesNormalizadas.slice(0, 3));
 
-    fetchData();
+      const donationsForChart = doacoesNormalizadas.map((d) => ({
+        date: d.date,
+      }));
+      setChartData(groupByMonth(donationsForChart, 12)); // 👈 12 meses
+    } catch (err) {
+      console.error("Erro ao ler dados do localStorage:", err);
+    }
   }, []);
-
-  const data = [
-    { mes: "Jul", doacoes: 15 },
-    { mes: "Ago", doacoes: 25 },
-    { mes: "Set", doacoes: 40 },
-    { mes: "Out", doacoes: stats.donations },
-  ];
 
   return (
     <>
@@ -104,7 +118,7 @@ export default function DashboardPage() {
         >
           <h2 style={{ color: "#0070f3", marginBottom: "30px" }}>Dashboard</h2>
 
-          {/* 🔹 Cards com dados reais */}
+          {/* Cards */}
           <div
             style={{
               display: "flex",
@@ -119,10 +133,14 @@ export default function DashboardPage() {
             <Card title="Receptores" value={stats.receivers} color="#f59e0b" />
             <Card title="Voluntários" value={stats.volunteers} color="#ec4899" />
             <Card title="Doadores" value={stats.givers} color="#3b82f6" />
-            <Card title="Itens em Estoque" value={stats.items} color="#6366f1" />
+            <Card
+              title="Unidades em Estoque"
+              value={stats.items}
+              color="#6366f1"
+            />
           </div>
 
-          {/* 🔹 Gráfico de Doações */}
+          {/* Gráfico */}
           <div
             style={{
               background: "#f9fafb",
@@ -135,10 +153,10 @@ export default function DashboardPage() {
             }}
           >
             <h3 style={{ marginBottom: "10px", color: "#374151" }}>
-              Gráfico de Doações (últimos meses)
+              Gráfico de Doações (últimos 12 meses)
             </h3>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={data}>
+              <BarChart data={chartData}>
                 <XAxis dataKey="mes" />
                 <YAxis />
                 <Tooltip />
@@ -147,7 +165,7 @@ export default function DashboardPage() {
             </ResponsiveContainer>
           </div>
 
-          {/* 🔹 Últimas Ações */}
+          {/* Últimas ações */}
           <div
             style={{
               background: "#f9fafb",
@@ -163,20 +181,39 @@ export default function DashboardPage() {
             </h3>
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr style={{ textAlign: "left", borderBottom: "2px solid #e5e7eb" }}>
+                <tr
+                  style={{
+                    textAlign: "left",
+                    borderBottom: "2px solid #e5e7eb",
+                  }}
+                >
                   <th style={{ padding: "10px" }}>Usuário</th>
                   <th style={{ padding: "10px" }}>Ação</th>
                   <th style={{ padding: "10px" }}>Data</th>
                 </tr>
               </thead>
               <tbody>
-                {recentActions.map((a, index) => (
-                  <tr key={index} style={{ borderBottom: "1px solid #e5e7eb" }}>
-                    <td style={{ padding: "10px" }}>{a.user}</td>
-                    <td style={{ padding: "10px" }}>{a.action}</td>
-                    <td style={{ padding: "10px" }}>{a.date}</td>
+                {recentActions.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={3}
+                      style={{ padding: "10px", color: "#6b7280" }}
+                    >
+                      Sem registros recentes.
+                    </td>
                   </tr>
-                ))}
+                ) : (
+                  recentActions.map((a, index) => (
+                    <tr
+                      key={index}
+                      style={{ borderBottom: "1px solid #e5e7eb" }}
+                    >
+                      <td style={{ padding: "10px" }}>{a.user ?? "—"}</td>
+                      <td style={{ padding: "10px" }}>{a.action ?? "—"}</td>
+                      <td style={{ padding: "10px" }}>{a.date ?? "—"}</td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -184,6 +221,47 @@ export default function DashboardPage() {
       </div>
     </>
   );
+}
+
+function normalizeDate(d) {
+  const raw =
+    d?.date ??
+    d?.data ??
+    d?.createdAt ??
+    d?.created_at ??
+    null;
+
+  if (!raw) return null;
+  const dt = new Date(raw);
+  if (isNaN(dt.getTime())) return null;
+  return dt.toISOString();
+}
+
+function groupByMonth(donations, monthsBack = 4) {
+  const fmt = new Intl.DateTimeFormat("pt-BR", { month: "short" });
+  const now = new Date();
+  const buckets = [];
+
+  for (let i = monthsBack - 1; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    buckets.push({ key, label: capitalize(fmt.format(d)), count: 0 });
+  }
+
+  (donations ?? []).forEach((don) => {
+    if (!don?.date) return;
+    const dt = new Date(d.date);
+    if (isNaN(dt.getTime())) return;
+    const key = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, "0")}`;
+    const b = buckets.find((x) => x.key === key);
+    if (b) b.count += 1;
+  });
+
+  return buckets.map((b) => ({ mes: b.label, doacoes: b.count }));
+}
+
+function capitalize(s) {
+  return s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
 }
 
 function Card({ title, value, color }) {
@@ -202,7 +280,6 @@ function Card({ title, value, color }) {
       onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
       onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1.0)")}
     >
-      {/* 🔹 Título com cor forçada branca */}
       <h3 style={{ color: "#fff", fontWeight: "600", marginBottom: "8px" }}>
         {title}
       </h3>
@@ -212,4 +289,3 @@ function Card({ title, value, color }) {
     </div>
   );
 }
-
