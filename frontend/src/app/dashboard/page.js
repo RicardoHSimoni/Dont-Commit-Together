@@ -202,8 +202,14 @@ function Card({ title, value, color }) {
       onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.05)")}
       onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1.0)")}
     >
-      <h3>{title}</h3>
-      <p style={{ fontSize: "24px", fontWeight: "bold" }}>{value}</p>
+      {/* 🔹 Título com cor forçada branca */}
+      <h3 style={{ color: "#fff", fontWeight: "600", marginBottom: "8px" }}>
+        {title}
+      </h3>
+      <p style={{ fontSize: "24px", fontWeight: "bold", color: "#fff" }}>
+        {value}
+      </p>
     </div>
   );
 }
+
