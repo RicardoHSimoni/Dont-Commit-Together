@@ -80,7 +80,7 @@ const CadastroVoluntario = () => {
       <Navegation />
       <div className={styles.formWrapper}>
         <div className={styles.formContainer}>
-          <h1 className={styles.titulo}>Cadastro de Voluntário</h1>
+          <h1 className={styles.titulo}>Cadastro de Funcionário</h1>
           <div className={styles.decoracao}></div>
           <form onSubmit={handleSubmit} className={styles.formulario}>
             <div className={styles.formGroup}>
